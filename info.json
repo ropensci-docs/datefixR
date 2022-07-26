@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "7e33ca878aa65e1fdb0cb30d89c31f086a6105cd",
+    "author": "github-actions[bot] <github-actions[bot]@users.noreply.github.com>",
+    "time": "2022-07-26 09:58:09",
+    "files": 1,
+    "merge": false,
+    "message": "Re-render README\n"
+  },
+  "repo": "https://github.com/ropensci/datefixR",
+  "pkg": "datefixR"
+}
