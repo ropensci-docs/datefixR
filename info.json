@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "94681f9e99d2ec905531e91ed7a7d82978edbf0d",
+    "author": "Nathan Constantine-Cooke <nathan.constantine-cooke@ed.ac.uk>",
+    "time": "2024-03-08 17:35:27",
+    "files": 1,
+    "merge": true,
+    "message": "Bump actions/upload-artifact from 3 to 4 (#104)\n\n"
+  },
+  "repo": "https://github.com/ropensci/datefixR",
+  "pkg": "datefixR"
+}
