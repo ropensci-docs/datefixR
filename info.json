@@ -1,0 +1,12 @@
+{
+  "commit": {
+    "commit": "34914589ad696260ea38ec0dc013ed3c9fe5fc86",
+    "author": "Nathan Constantine-Cooke <nathan.constantine-cooke@ed.ac.uk>",
+    "time": "2024-10-19 15:14:50",
+    "files": 4,
+    "merge": false,
+    "message": "Fix documentation typos\n"
+  },
+  "repo": "https://github.com/ropensci/datefixR",
+  "pkg": "datefixR"
+}
