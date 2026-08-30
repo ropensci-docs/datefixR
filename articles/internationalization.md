@@ -1,0 +1,268 @@
+# Localization with datefixR
+
+``` r
+
+library(datefixR)
+```
+
+## Introduction
+
+One of the most powerful features of `datefixR` is its comprehensive
+localization support. The package can automatically recognize and parse
+dates in multiple languages without requiring users to specify the
+language beforehand. This makes it particularly valuable for processing
+datasets collected across different countries or containing
+mixed-language date entries.
+
+This vignette provides detailed examples and best practices for working
+with international date formats in `datefixR`.
+
+## Supported Languages and Formats
+
+`datefixR` currently supports date parsing in **7 languages**, with both
+abbreviated and full month names:
+
+### Fully Supported Languages
+
+- **English**: Default language, supports both US (MDY) and
+  international (DMY) formats
+- **French (Français)**: Comprehensive support including cultural
+  formatting patterns
+- **German (Deutsch)**: Full month names and common German date
+  conventions
+- **Spanish (Español)**: Including regional variations and prepositions
+- **Portuguese**: Brazilian and European Portuguese month names
+- **Russian (Русский)**: Cyrillic month names and formatting
+- **Indonesian (Bahasa Indonesia)**: Indonesian month names  
+
+### Language Detection Features
+
+- **Automatic Recognition**: No need to specify language in advance
+- **Mixed Language Support**: Process datasets with multiple languages
+  simultaneously
+- **Cultural Awareness**: Recognizes language-specific formatting
+  conventions
+- **Flexible Parsing**: Handles variations in capitalization and spacing
+- **User messages**: User-facing messages have been translated for the
+  above languages in addition to Czech and Slovak.
+
+## Language-Specific Examples
+
+### English
+
+English dates support various formats including ordinal numbers and
+different separator styles:
+
+``` r
+
+# Standard formats
+fix_date_char("15 January 2020")
+#> [1] "2020-01-15"
+fix_date_char("July 4th, 1776")
+#> [1] "1776-07-04"
+fix_date_char("December 25th, 2023")
+#> [1] "2023-12-25"
+
+# Different separators
+english_dates <- c( # US format with slashes
+  "15-Jan-2020", # Day-month-year with hyphens
+  "2020.01.15", # Year-first with dots
+  "15th January 2020" # Full format with ordinal
+)
+fix_date_char(english_dates)
+#> [1] "2020-01-15" "2020-01-15" "2020-01-15"
+```
+
+### French (Français)
+
+French dates often include articles (“le”, “du”) and prepositions
+(“de”):
+
+``` r
+
+# Various French formats
+french_dates <- c(
+  "15 janvier 2020", # Standard format
+  "le 3 mars 2013", # With article
+  "1er avril 2022", # First of the month
+  "25 déc. 2023", # Abbreviated December
+  "3 mai 1968" # Historical date
+)
+fix_date_char(french_dates)
+#> [1] "2020-01-15" "2013-03-03" "2022-04-01" "2023-12-25" "1968-05-03"
+
+# Mixed separators in French
+french_mixed <- c(
+  "15-janvier-2020",
+  "03/mars/2013",
+  "2020.05.15"
+)
+fix_date_char(french_mixed)
+#> [1] "2020-01-15" "2013-03-03" "2020-05-15"
+```
+
+### German (Deutsch)
+
+German dates commonly use dots as separators and may include ordinal
+indicators:
+
+``` r
+
+# German date formats
+german_dates <- c(
+  "15. Januar 2020", # With ordinal dot
+  "3. Dezember 1999", # December
+  "1. Mai 2023", # May Day
+  "24. Dez 2023", # Abbreviated December
+  "15 Jan 2020" # Without ordinal
+)
+fix_date_char(german_dates)
+#> [1] "2020-01-15" "1999-12-03" "2023-05-01" "2023-12-24" "2020-01-15"
+
+# German with different separators
+german_separators <- c(
+  "15.01.2020",
+  "15-Januar-2020",
+  "15/01/20"
+)
+fix_date_char(german_separators)
+#> [1] "2020-01-15" "2020-01-15" "2020-01-15"
+```
+
+### Spanish (Español)
+
+Spanish dates frequently include prepositions like “de” and “del”:
+
+``` r
+
+# Spanish date variations
+spanish_dates <- c(
+  "15 de enero de 2020", # Full format with prepositions
+  "7 de septiembre del 2014", # With "del" contraction
+  "1 ene 2023", # Abbreviated January
+  "25 dic 2023", # Abbreviated December
+  "15 enero 2020" # Without prepositions
+)
+fix_date_char(spanish_dates)
+#> [1] "2020-01-15" "2014-09-07" "2023-01-01" "2023-12-25" "2020-01-15"
+
+# Regional variations
+spanish_regional <- c(
+  "15-ene-2020",
+  "15/enero/2020",
+  "2020-01-15"
+)
+fix_date_char(spanish_regional)
+#> [1] "2020-01-15" "2020-01-15" "2020-01-15"
+```
+
+### Portuguese
+
+Portuguese dates, like Spanish, use prepositions and have both Brazilian
+and European variations:
+
+``` r
+
+# Portuguese date formats
+portuguese_dates <- c(
+  "15 de janeiro de 2020", # Full format
+  "3 de dezembro de 1999", # December
+  "1º jan 2023", # First with ordinal
+  "25 dez 2023", # Abbreviated
+  "15 janeiro 2020" # Without prepositions
+)
+fix_date_char(portuguese_dates)
+#> [1] "2020-01-15" "1999-12-03" "2023-01-01" "2023-12-25" "2020-01-15"
+```
+
+### Russian (Русский)
+
+Russian uses Cyrillic script for month names:
+
+``` r
+
+# Russian date examples
+russian_dates <- c(
+  "15 января 2020", # January
+  "3 декабря 1999", # December
+  "1 мая 2023", # May
+  "25 дек 2023" # Abbreviated December
+)
+fix_date_char(russian_dates)
+#> [1] "2020-01-15" "1999-12-03" "2023-05-01" "2023-12-25"
+```
+
+### Indonesian (Bahasa Indonesia)
+
+``` r
+
+# Indonesian date examples
+indonesian_dates <- c(
+  "15 Januari 2020", # January
+  "3 Desember 1999", # December
+  "1 Mei 2023" # May
+)
+fix_date_char(indonesian_dates)
+#> [1] "2020-01-15" "1999-12-03" "2023-05-01"
+```
+
+## Handling Mixed Languages
+
+The package automatically detects the language of month names without
+requiring explicit specification:
+
+``` r
+
+mixed_dates <- c(
+  "15 January 2020", # English
+  "15 janvier 2020", # French
+  "15 Januar 2020", # German
+  "15 enero 2020", # Spanish
+  "15 de janeiro de 2020" # Portuguese
+)
+fix_date_char(mixed_dates)
+#> [1] "2020-01-15" "2020-01-15" "2020-01-15" "2020-01-15" "2020-01-15"
+```
+
+## Format Detection
+
+`datefixR` intelligently handles different date formats and separators
+across languages:
+
+``` r
+
+international_formats <- c(
+  "02/05/92", # US/UK ambiguous
+  "2020-mai-01", # French with hyphen
+  "1996.05.01", # German with dots
+  "02 04 96" # Space separator
+)
+fix_date_char(international_formats)
+#> [1] "1992-05-02" "2020-05-01" "1996-05-01" "1996-04-02"
+```
+
+## Roman Numeral Support (Experimental)
+
+The package includes experimental support for Roman numeral months:
+
+``` r
+
+roman_dates <- c("15.VII.2023", "3.XII.1999", "1.I.2000")
+fix_date_char(roman_dates, roman.numeral = TRUE)
+#> [1] "2023-07-15" "1999-12-03" "2000-01-01"
+```
+
+## Best Practices
+
+1.  **No Language Specification Required**: The package automatically
+    detects the language
+2.  **Mixed Language Support**: You can process datasets with multiple
+    languages
+3.  **Format Flexibility**: Various separators and formats are supported
+4.  **Consistent Output**: All dates are converted to standardized R
+    Date class
+
+## Adding New Languages
+
+If you need/want support for additional languages, please consider
+contributing to the package or filing an issue on GitHub.
