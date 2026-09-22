@@ -1,0 +1,13 @@
+{
+  "commit": {
+    "commit": "987a2b66945203b59a78a19c3174b0fad870fcea",
+    "author": "Nathan Constantine-Cooke <nathan.constantine-cooke@ed.ac.uk>",
+    "time": "2026-09-22T12:01:34Z",
+    "files": 1,
+    "merge": false,
+    "message": "Fix CI workflow triggers with explicit branch filters\n"
+  },
+  "repo": "https://github.com/ropensci/datefixR",
+  "pkg": "datefixR",
+  "time": "2026-09-22T15:12:01Z"
+}

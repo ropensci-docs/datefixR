@@ -1,0 +1,536 @@
+# datefixR: Comprehensive Date Standardization Guide
+
+``` r
+
+library(datefixR)
+```
+
+## Introduction
+
+**datefixR** is a comprehensive R package designed to automatically
+standardize messy date data into consistent, machine-readable formats.
+Whether you’re dealing with mixed date formats from web forms,
+international datasets, or legacy systems, `datefixR` intelligently
+parses diverse date representations and converts them to R’s standard
+`Date` class.
+
+### Key Features
+
+- **Smart parsing**: Handles mixed date formats, separators, and
+  representations in a single dataset
+- **Multilingual support**: Recognizes dates in English, French, German,
+  Spanish, Portuguese, Russian, Czech, Slovak, and Indonesian
+- **Missing data imputation**: User-controlled behavior for incomplete
+  dates (missing days/months)
+- **Detailed error reporting**: Identifies exactly which dates couldn’t
+  be parsed and why
+- **Excel compatibility**: Supports both R and Excel numeric date
+  representations
+- **Roman numeral support**: Experimental support for Roman numeral
+  months
+
+### Core Functions
+
+The package consists of three main user-accessible functions:
+
+- **[`fix_date_char()`](https://docs.ropensci.org/datefixR/reference/fix_date_char.md)**:
+  Converts character vectors of dates
+- **[`fix_date_df()`](https://docs.ropensci.org/datefixR/reference/fix_date_df.md)**:
+  Processes date columns in data frames or tibbles
+- **[`fix_date_app()`](https://docs.ropensci.org/datefixR/reference/fix_date_app.md)**:
+  Interactive Shiny application for date cleaning (see dedicated
+  vignette)
+
+### When to Use datefixR
+
+This package is particularly valuable when:
+
+- Processing dates from free-text web form entries
+- Handling international datasets with mixed date formats
+- Cleaning legacy data with inconsistent date representations
+- Working with Excel imports containing mixed text and numeric dates
+- Validating and standardizing date data quality
+
+## Core Workflow
+
+#### Date standardization
+
+Firstly, we will demonstrate date standardization without imputation. We
+consider a data frame with two columns of dates in differing formats
+with no missing data.
+
+``` r
+
+bad.dates <- data.frame(
+  id = seq(5),
+  some.dates = c(
+    "02/05/92",
+    "01-04-2020",
+    "1996/05/01",
+    "2020-05-01",
+    "02-04-96"
+  ),
+  some.more.dates = c(
+    "01 03 2015",
+    "2nd January 2010",
+    "01/05/1990",
+    "03-Dec-2012",
+    "02 April 2020"
+  )
+)
+knitr::kable(bad.dates)
+```
+
+|  id | some.dates | some.more.dates  |
+|----:|:-----------|:-----------------|
+|   1 | 02/05/92   | 01 03 2015       |
+|   2 | 01-04-2020 | 2nd January 2010 |
+|   3 | 1996/05/01 | 01/05/1990       |
+|   4 | 2020-05-01 | 03-Dec-2012      |
+|   5 | 02-04-96   | 02 April 2020    |
+
+[`fix_date_df()`](https://docs.ropensci.org/datefixR/reference/fix_date_df.md)
+requires two arguments, `df`, a data frame (or tibble) object and
+`col.names`, a character vector containing the names of columns to be
+standardized. By default, the first column of the data frame is assumed
+to contain row IDs. These IDs are used if a warning or error is raised
+to assist the user with locating the source of the error. The ID column
+can also be manually provided via the `id` argument.
+
+The output from this function is a data frame or tibble (dependent on
+the object type of the the first argument, `df`) with the selected date
+columns now standardized and belonging to the `Date` class.
+
+``` r
+
+fixed.dates <- fix_date_df(
+  bad.dates,
+  c("some.dates", "some.more.dates")
+)
+knitr::kable(fixed.dates)
+```
+
+|  id | some.dates | some.more.dates |
+|----:|:-----------|:----------------|
+|   1 | 1992-05-02 | 2015-03-01      |
+|   2 | 2020-04-01 | 2010-01-02      |
+|   3 | 1996-05-01 | 1990-05-01      |
+|   4 | 2020-05-01 | 2012-12-03      |
+|   5 | 1996-04-02 | 2020-04-02      |
+
+`datefixR` can handle many different formats including -, /, ., or white
+space separation, year-first or day-first, and month supplied as a
+number, an abbreviation or full length name.
+
+[`fix_date_char()`](https://docs.ropensci.org/datefixR/reference/fix_date_char.md)
+is similar to
+[`fix_date_df()`](https://docs.ropensci.org/datefixR/reference/fix_date_df.md)
+but only applies to a single character object.
+
+``` r
+
+fix_date_char("01 02 2014")
+#> [1] "2014-02-01"
+```
+
+## Advanced Topics
+
+### Localization
+
+`datefixR` currently supports dates being provided in English, Français
+(French), Deutsch (German), español (Spanish), and Русский (Russian) by
+recognizing both names of months in these languages and formatting
+customs. Expected languages do not need to be specified and can be
+provided just like any other date to be standardized.
+
+``` r
+
+fix_date_char("7 de septiembre del 2014")
+#> [1] "2014-09-07"
+```
+
+Functions in `datefixR` assume day-first instead of month-first when
+day, month, and year are all given numerically (unless year is given
+first). However, this behavior can be modified by passing
+`format = "mdy"` to function calls.
+
+``` r
+
+fix_date_char("01 02 2014", format = "mdy")
+#> [1] "2014-01-02"
+```
+
+If the month is given by name, then `datefixR` will automatically detect
+the correct format without the `format` argument needing to be specified
+by the user.
+
+``` r
+
+fix_date_char("July 4th, 1776")
+#> [1] "1776-07-04"
+```
+
+### Date and Month Imputation
+
+By default, `datefixR` imputes missing months as July, and missing days
+of the month as the first day. As such, “1992” converts to
+
+``` r
+
+fix_date_char("1992")
+#> [1] "1992-07-01"
+```
+
+The argument for defaulting to July is 1st-2nd July is halfway through
+the year (on a non leap year). Therefore, assuming the year supplied is
+indeed correct, the imputation has a maximum potential error of 6 months
+from the true date. However, this behavior can be changed by supplying
+the `day.impute` and `month.impute` arguments with an integer
+corresponding to the desired day and month. For example,
+`day.impute = 1` and `month.impute = 1` results in the first day of
+January being imputed instead which is often a more common imputation
+for missing date data.
+
+``` r
+
+fix_date_char("1992", day.impute = 1, month.impute = 1)
+#> [1] "1992-01-01"
+```
+
+The imputation mechanism can also be modified to impute `NA` if a month
+or day is missing by setting `day.impute` or `month.impute` to `NA`.
+This will also result in a warning being raised.
+
+``` r
+
+fix_date_char("1992", month.impute = NA)
+#> [1] NA
+```
+
+Finally, imputation can be prevented by setting `day.impute` or
+`month.impute` to `NULL`. This will result in an error being raised if
+the day or month are missing respectively.
+
+``` r
+
+fix_date_char("1992", month.impute = NULL)
+# ERROR
+```
+
+`day.impute` and `month.impute` can also be passed to
+[`fix_date_df()`](https://docs.ropensci.org/datefixR/reference/fix_date_df.md)
+for similar functionality.
+
+``` r
+
+example.df <- data.frame(
+  id = seq(1, 3),
+  some.dates = c("2014", "April 1990", "Mar 19")
+)
+fix_date_df(example.df, "some.dates", day.impute = 1, month.impute = 1)
+#>   id some.dates
+#> 1  1 2014-01-01
+#> 2  2 1990-04-01
+#> 3  3 2019-03-01
+```
+
+### Converting Numeric Dates
+
+By default, if a date is given numerically (I.E no separators such as
+“/”, “-”, or white space) and is more than four character long, then
+this date is assumed to have been converted from `R`’s numeric date
+format. If a `Date` object is converted to a `numeric` object in R, the
+assigned value becomes the number of days from `1970-01-01`. Note that
+the date must still be converted to a `character` object before being
+passed to a `datefixR` function.
+
+``` r
+
+date <- as.numeric(as.Date("2023-01-17"))
+print(date)
+#> [1] 19374
+fix_date_char(as.character(date))
+#> [1] "2023-01-17"
+```
+
+However if a date is converted to a numeric date in Excel, the number of
+days is instead counted from `1900-01-01`. If a user expects that dates
+to have been converted to numerical dates in Excel, then `excel = TRUE`
+can be passed to a `datefixR` function to rectify this.
+
+``` r
+
+fix_date_char("44941", excel = TRUE)
+#> [1] "2023-01-15"
+```
+
+### Roman Numeral Months [![Experimental](https://lifecycle.r-lib.org/articles/figures/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+
+Oracle Database can use Roman numerals to format months and this custom
+is also used in some biological contexts. If dates in need of parsing
+are in this format, `roman.numeral = TRUE` can be passed to
+[`fix_date_char()`](https://docs.ropensci.org/datefixR/reference/fix_date_char.md)
+or
+[`fix_date_df()`](https://docs.ropensci.org/datefixR/reference/fix_date_df.md).
+This implementation is currently experimental and is not guaranteed to
+work alongside other date formats.
+
+``` r
+
+fix_date_char("12/IV/2019", roman.numeral = TRUE)
+#> [1] "2019-04-12"
+```
+
+## Error & Edge-Case Handling
+
+`datefixR` provides detailed error messages when it encounters dates
+which cannot be parsed. These errors often guide you to correct format
+issues or identify unsupported cases.
+
+#### Common Error Examples
+
+- **Unsupported Date Parts**: If month names or formats aren’t
+  recognized.
+- **Invalid Date Formats**: Entering purely numeric values with
+  unsupported separators.
+
+``` r
+
+tryCatch(
+  {
+    fix_date_char("99-99-9999")
+  },
+  error = function(e) {
+    cat("Error:", e$message, "\n")
+  }
+)
+#> Error: Month not in expected range
+#>  for subject 1 (date: 99-99-9999)
+```
+
+## FAQ
+
+### Understanding Year Parsing Logic
+
+#### Two-Digit vs Four-Digit Years
+
+`datefixR` implements intelligent two-digit year expansion using a
+sliding window approach. The algorithm examines the first digit of a
+two-digit year and compares it to the third digit of the current year.
+
+**Algorithm Details:** - If the first digit ≤ current year’s third
+digit: prefix with “20” - If the first digit \> current year’s third
+digit: prefix with “19”
+
+``` r
+
+# Current year: 2025 (third digit is 2)
+# Years 00-25 become 2000-2025
+fix_date_char("01/01/05") # → 2005-01-01
+fix_date_char("01/01/24") # → 2024-01-01
+
+# Years 26-99 become 1926-1999
+fix_date_char("06/15/92") # → 1992-06-15
+fix_date_char("03/10/80") # → 1980-03-10
+```
+
+**Edge Case Behavior:** As time progresses, this window shifts
+naturally. In 2030, years 00-30 will map to 2000-2030, while 31-99 map
+to 1931-1999.
+
+``` r
+
+# Demonstrating current behavior (as of 2025)
+samples <- c("01/01/20", "01/01/24", "01/01/23", "01/01/50", "01/01/99")
+for (date in samples) {
+  result <- fix_date_char(date)
+  cat(sprintf("%s → %s\n", date, result))
+}
+#> 01/01/20 → 2020-01-01
+#> 01/01/24 → 2024-01-01
+#> 01/01/23 → 2023-01-01
+#> 01/01/50 → 1950-01-01
+#> 01/01/99 → 1999-01-01
+```
+
+### Automatic YMD Detection Logic
+
+`datefixR` uses a sophisticated hierarchy to determine date component
+order:
+
+#### 1. Year-First Detection
+
+If the first component is 4 digits, assumes `YYYY-MM-DD` format:
+
+``` r
+
+fix_date_char("2023/12/25") # Automatically detects year-first
+#> [1] "2023-12-25"
+fix_date_char("1995-04-15") # Year-first with different separator
+#> [1] "1995-04-15"
+```
+
+#### 2. Month Name Detection
+
+If the first component is a month name, switches to `month-day-year`
+format:
+
+``` r
+
+fix_date_char("January 15, 2023") # Month name → MDY
+#> [1] "2023-01-15"
+fix_date_char("Mar 5 1992") # Abbreviated month → MDY
+#> [1] "1992-03-05"
+fix_date_char("abril 20 2020") # Spanish month → MDY
+#> [1] "2020-04-20"
+```
+
+#### 3. Numeric Component Defaults
+
+For purely numeric dates, defaults to `day-month-year` unless
+overridden:
+
+``` r
+
+# Default behavior (DMY)
+fix_date_char("15/03/2023") # → 2023-03-15 (day/month/year)
+#> [1] "2023-03-15"
+
+# Override with format parameter
+# fix_date_char("15/03/2023", format = "mdy") # → Invalid (month 15)
+fix_date_char("03/15/2023", format = "mdy") # → 2023-03-15 (month/day/year)
+#> [1] "2023-03-15"
+```
+
+#### 4. Handling Ambiguous Cases
+
+`datefixR` cannot resolve truly ambiguous dates without explicit format
+specification:
+
+``` r
+
+# Ambiguous: could be March 5th or May 3rd
+fix_date_char("03/05/2023") # → 2023-05-03 (assumes DMY)
+#> [1] "2023-05-03"
+fix_date_char("03/05/2023", format = "mdy") # → 2023-03-05 (forces MDY)
+#> [1] "2023-03-05"
+
+# Unambiguous: day > 12 forces correct interpretation
+fix_date_char("15/03/2023") # → 2023-03-15 (only valid as DMY)
+#> [1] "2023-03-15"
+fix_date_char("03/15/2023", format = "mdy") # → 2023-03-15 (only valid as MDY)
+#> [1] "2023-03-15"
+```
+
+#### 5. Format Detection Examples
+
+Here’s how different inputs trigger specific detection logic:
+
+``` r
+
+# Year-first detection (4-digit first component)
+test_dates_ymd <- c("2023/01/15", "1999-12-31", "2020.06.30")
+for (date in test_dates_ymd) {
+  cat(sprintf("%s → %s (YMD detected)\n", date, fix_date_char(date)))
+}
+#> 2023/01/15 → 2023-01-15 (YMD detected)
+#> 1999-12-31 → 1999-12-31 (YMD detected)
+#> 2020.06.30 → 2020-06-30 (YMD detected)
+
+# Month-name detection (text month triggers MDY)
+test_dates_mdy <- c("March 15, 2023", "Dec 25 2020", "Jan 1st 2000")
+for (date in test_dates_mdy) {
+  cat(sprintf("%s → %s (MDY detected)\n", date, fix_date_char(date)))
+}
+#> March 15, 2023 → 2023-03-15 (MDY detected)
+#> Dec 25 2020 → 2020-12-25 (MDY detected)
+#> Jan 1st 2000 → 2000-01-01 (MDY detected)
+
+# Default numeric (assumes DMY)
+test_dates_dmy <- c("15/03/2023", "01-12-1999", "25.12.2020")
+for (date in test_dates_dmy) {
+  cat(sprintf("%s → %s (DMY default)\n", date, fix_date_char(date)))
+}
+#> 15/03/2023 → 2023-03-15 (DMY default)
+#> 01-12-1999 → 1999-12-01 (DMY default)
+#> 25.12.2020 → 2020-12-25 (DMY default)
+```
+
+### Overriding Automatic Detection
+
+#### Explicit Format Specification
+
+When automatic detection fails or produces unwanted results, use the
+`format` parameter:
+
+``` r
+
+# Force MDY interpretation
+fix_date_char("01/02/2023", format = "mdy") # → 2023-01-02 (Jan 2nd)
+#> [1] "2023-01-02"
+fix_date_char("01/02/2023", format = "dmy") # → 2023-02-01 (Feb 1st)
+#> [1] "2023-02-01"
+
+# Useful for consistently formatted datasets
+dates_usa <- c("01/15/2023", "03/22/2023", "12/01/2023")
+lapply(dates_usa, function(x) fix_date_char(x, format = "mdy"))
+#> [[1]]
+#> [1] "2023-01-15"
+#> 
+#> [[2]]
+#> [1] "2023-03-22"
+#> 
+#> [[3]]
+#> [1] "2023-12-01"
+```
+
+#### Data Frame Processing
+
+The same logic applies to
+[`fix_date_df()`](https://docs.ropensci.org/datefixR/reference/fix_date_df.md)
+with consistent format specification:
+
+``` r
+
+usa_dates <- data.frame(
+  id = 1:3,
+  event_date = c("01/15/2023", "03/22/2023", "12/01/2023")
+)
+
+# Apply consistent MDY format
+fixed_usa <- fix_date_df(usa_dates, "event_date", format = "mdy")
+knitr::kable(fixed_usa)
+```
+
+|  id | event_date |
+|----:|:-----------|
+|   1 | 2023-01-15 |
+|   2 | 2023-03-22 |
+|   3 | 2023-12-01 |
+
+### Citation
+
+If you use this package in your research, please consider citing
+`datefixR`. An up-to-date citation can be obtained by running
+
+``` r
+
+citation("datefixR")
+#> To cite package 'datefixR' in publications use:
+#> 
+#>   Constantine-Cooke N (2025). _datefixR: Standardize Dates in Different
+#>   Formats or with Missing Data_. doi:10.5281/zenodo.5655311
+#>   <https://doi.org/10.5281/zenodo.5655311>. R package version
+#>   2.0.1.9000, <https://CRAN.R-project.org/package=datefixR>.
+#> 
+#> A BibTeX entry for LaTeX users is
+#> 
+#>   @Manual{,
+#>     title = {{datefixR}: Standardize Dates in Different Formats or with Missing Data},
+#>     author = {Nathan Constantine-Cooke},
+#>     year = {2025},
+#>     note = {R package version 2.0.1.9000},
+#>     doi = {10.5281/zenodo.5655311},
+#>     url = {https://CRAN.R-project.org/package=datefixR},
+#>   }
+```
